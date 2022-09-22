@@ -1,41 +1,39 @@
-import { useState, useEffect, useRef } from "react";
+import React from "react";
 
 export const useFetch = (url) => {
-  const isMounted = useRef(true);
-  const [state, setState] = useState({
-    data: null,
-    loading: true,
-    error: null,
-  });
+  const isMounted = React.useRef(true);
+  const [fetchData, setFetchData] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(null);
 
-  useEffect(() => {
+  const getData = async (url) => {
+    setFetchData(null);
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (isMounted.current) {
+        setFetchData(data);
+        setLoading(false);
+        setError(null);
+      }
+    } catch (error) {
+      setFetchData(null);
+      setLoading(false);
+      setError(error);
+    }
+  };
+
+  React.useEffect(() => {
+    getData(url);
+  
     return () => {
       isMounted.current = false;
     };
-  }, []);
-
-  useEffect(() => {
-    setState({ data: null, loading: true, error: null });
-
-    fetch(url)
-      .then((resp) => resp.json())
-      .then((data) => {
-        if (isMounted.current) {
-          setState({
-            loading: false,
-            error: null,
-            data,
-          });
-        }
-      })
-      .catch(() => {
-        setState({
-          data: null,
-          loading: false,
-          error: "No se pudo cargar la info",
-        });
-      });
   }, [url]);
 
-  return state;
+  return { data: fetchData, loading, error };
 };
